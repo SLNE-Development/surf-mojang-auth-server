@@ -7,14 +7,14 @@ import java.util.UUID;
 
 public class HasJoinedMinecraftServerResponseImpl extends MinecraftProfilePropertiesResponseImpl {
 
-	public HasJoinedMinecraftServerResponseImpl() {
-	}
+    public HasJoinedMinecraftServerResponseImpl() {
+    }
 
-	public HasJoinedMinecraftServerResponseImpl(GameProfile profile) {
-		super(profile);
-	}
+    public HasJoinedMinecraftServerResponseImpl(GameProfile profile) {
+        super(profile);
+    }
 
-	public HasJoinedMinecraftServerResponseImpl(UUID id, String name, PropertyMap properties) {
-		super(id, name, properties);
-	}
+    public HasJoinedMinecraftServerResponseImpl(UUID id, String name, PropertyMap properties) {
+        super(id, name, properties);
+    }
 }

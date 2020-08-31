@@ -1,25 +1,25 @@
 package net.wouto.proxy.response.result;
 
 import com.mojang.authlib.GameProfile;
-import net.wouto.proxy.response.ErrorResponse;
+import net.wouto.proxy.response.BaseResponse;
 
-public class ProfileSearchResultsResponseImpl extends ErrorResponse {
+public class ProfileSearchResultsResponseImpl implements BaseResponse {
 
-	private GameProfile[] profiles;
+    private GameProfile[] profiles;
 
-	public ProfileSearchResultsResponseImpl() {
-	}
+    public ProfileSearchResultsResponseImpl() {
+    }
 
-	public ProfileSearchResultsResponseImpl(GameProfile[] profiles) {
-		this.profiles = profiles;
-	}
+    public ProfileSearchResultsResponseImpl(GameProfile[] profiles) {
+        this.profiles = profiles;
+    }
 
-	public void setProfiles(GameProfile[] profiles) {
-		this.profiles = profiles;
-	}
+    public void setProfiles(GameProfile[] profiles) {
+        this.profiles = profiles;
+    }
 
-	public GameProfile[] getProfiles() {
-		return this.profiles;
-	}
+    public GameProfile[] getProfiles() {
+        return this.profiles;
+    }
 
 }

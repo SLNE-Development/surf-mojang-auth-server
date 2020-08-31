@@ -6,7 +6,8 @@ public class BasicProperty {
 
     private String name;
     private String value;
-    @JsonInclude(JsonInclude.Include.NON_NULL) private String signature;
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private String signature;
 
     public BasicProperty(String name, String value) {
         this.name = name;

@@ -4,6 +4,7 @@ import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.properties.Property;
+import java.net.InetAddress;
 import net.wouto.proxy.Config;
 import net.wouto.proxy.Util;
 import net.wouto.proxy.response.result.HasJoinedMinecraftServerResponseImpl;
@@ -89,16 +90,15 @@ public class GameProfileCache {
         return response;
     }
 
-    public HasJoinedMinecraftServerResponseImpl hasJoined(String username, String serverId) throws Exception {
+    public HasJoinedMinecraftServerResponseImpl hasJoined(String username, String serverId, InetAddress address) throws Exception {
         HasJoinedMinecraftServerResponseImpl response = null;
         try {
-            response = MojangAPI.getInstance().hasJoined(username, serverId);
+            response = MojangAPI.getInstance().hasJoined(username, serverId, address);
             GameProfile gameProfile = new GameProfile(response.getId(), response.getName());
             gameProfile.getProperties().putAll(response.getPropertyMap());
             this.nameProfileCache.put(gameProfile.getName(), gameProfile);
             this.uuidProfileCache.put(gameProfile.getId(), gameProfile);
         } catch (Exception e) {
-            e.printStackTrace();
             GameProfile profile = null;
             try {
                 profile = this.nameProfileCache.get(username, getNullProfile);

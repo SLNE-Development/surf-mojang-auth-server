@@ -8,42 +8,44 @@ import net.wouto.proxy.response.ErrorResponse;
 
 public class UnknownRequestResponse extends ErrorResponse {
 
-	private String url;
-	private String requestMethod;
-	@JsonInclude(JsonInclude.Include.NON_NULL) private String body;
-	@JsonInclude(JsonInclude.Include.NON_NULL) private ObjectNode jsonBody;
+    private String url;
+    private String requestMethod;
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private String body;
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private ObjectNode jsonBody;
 
-	public UnknownRequestResponse(String url, String requestMethod) {
-		this(url, requestMethod, null);
-	}
+    public UnknownRequestResponse(String url, String requestMethod) {
+        this(url, requestMethod, null);
+    }
 
-	public UnknownRequestResponse(String url, String requestMethod, String requestBody) {
-		super("Unknown request");
-		this.url = url;
-		this.requestMethod = requestMethod;
-		if (requestBody != null) {
-			try {
-				JsonNode node = MojangProxyServer.get().getMapper(false).readTree(requestBody);
-				this.jsonBody = (ObjectNode) node;
-			} catch (Exception e) {
-				this.body = requestBody;
-			}
-		}
-	}
+    public UnknownRequestResponse(String url, String requestMethod, String requestBody) {
+        super("Unknown request");
+        this.url = url;
+        this.requestMethod = requestMethod;
+        if (requestBody != null) {
+            try {
+                JsonNode node = MojangProxyServer.get().getMapper(false).readTree(requestBody);
+                this.jsonBody = (ObjectNode) node;
+            } catch (Exception e) {
+                this.body = requestBody;
+            }
+        }
+    }
 
-	public ObjectNode getJsonBody() {
-		return jsonBody;
-	}
+    public ObjectNode getJsonBody() {
+        return jsonBody;
+    }
 
-	public String getUrl() {
-		return url;
-	}
+    public String getUrl() {
+        return url;
+    }
 
-	public String getRequestMethod() {
-		return requestMethod;
-	}
+    public String getRequestMethod() {
+        return requestMethod;
+    }
 
-	public String getBody() {
-		return body;
-	}
+    public String getBody() {
+        return body;
+    }
 }
