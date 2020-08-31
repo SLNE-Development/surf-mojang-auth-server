@@ -1,16 +1,18 @@
 package net.wouto.proxy.webserver;
 
-import com.mojang.authlib.GameProfile;
-import java.util.Arrays;
-import java.util.UUID;
 import net.wouto.proxy.MojangProxyServer;
 import net.wouto.proxy.cache.GameProfileCache;
+import net.wouto.proxy.request.JoinMinecraftServerRequestImpl;
 import net.wouto.proxy.response.result.HasJoinedMinecraftServerResponseImpl;
 import net.wouto.proxy.response.result.JoinMinecraftServerResponseImpl;
 import net.wouto.proxy.response.result.MinecraftProfilePropertiesResponseImpl;
-import net.wouto.proxy.response.result.ProfileSearchResultsResponseImpl;
-import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 public class SessionRestHandler {
@@ -32,6 +34,17 @@ public class SessionRestHandler {
             System.out.println("forwarding hasJoined(username:\"" + username + "\", serverId:\"" + serverId + "\")");
         }
         return this.cache.hasJoined(username, serverId, null);
+    }
+
+
+    @RequestMapping(value = "/session/minecraft/join", method = RequestMethod.POST, consumes = "application/json")
+    @ResponseBody
+    public JoinMinecraftServerResponseImpl join(@RequestBody JoinMinecraftServerRequestImpl request) throws Exception {
+        if (MojangProxyServer.LOG_KNOWN_REQUESTS) {
+            System.out.println("forwarding join(" + request + ")");
+        }
+
+        return this.cache.join(request);
     }
 
     @RequestMapping(value = "/session/minecraft/profile/{uuid}", method = RequestMethod.GET)

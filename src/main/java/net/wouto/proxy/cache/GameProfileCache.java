@@ -5,19 +5,20 @@ import com.google.common.cache.CacheBuilder;
 import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.properties.Property;
 import java.net.InetAddress;
-import net.wouto.proxy.Config;
-import net.wouto.proxy.Util;
-import net.wouto.proxy.response.result.HasJoinedMinecraftServerResponseImpl;
-import net.wouto.proxy.response.result.MinecraftProfilePropertiesResponseImpl;
-import net.wouto.proxy.response.result.ProfileSearchResultsResponseImpl;
-import net.wouto.proxy.service.MojangAPI;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
+import net.wouto.proxy.Config;
+import net.wouto.proxy.Util;
+import net.wouto.proxy.request.JoinMinecraftServerRequestImpl;
+import net.wouto.proxy.response.result.HasJoinedMinecraftServerResponseImpl;
+import net.wouto.proxy.response.result.JoinMinecraftServerResponseImpl;
+import net.wouto.proxy.response.result.MinecraftProfilePropertiesResponseImpl;
+import net.wouto.proxy.response.result.ProfileSearchResultsResponseImpl;
+import net.wouto.proxy.service.MojangAPI;
 
 public class GameProfileCache {
 
@@ -88,6 +89,10 @@ public class GameProfileCache {
         }
         // </DEBUG>
         return response;
+    }
+
+    public JoinMinecraftServerResponseImpl join(JoinMinecraftServerRequestImpl request) throws Exception {
+        return MojangAPI.getInstance().join(request);
     }
 
     public HasJoinedMinecraftServerResponseImpl hasJoined(String username, String serverId, InetAddress address) throws Exception {

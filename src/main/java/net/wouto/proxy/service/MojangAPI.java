@@ -12,14 +12,15 @@ import com.mojang.authlib.yggdrasil.YggdrasilGameProfileRepository;
 import com.mojang.authlib.yggdrasil.response.ProfileSearchResultsResponse;
 import com.mojang.util.UUIDTypeAdapter;
 import java.net.InetAddress;
-import net.wouto.proxy.response.result.HasJoinedMinecraftServerResponseImpl;
-import net.wouto.proxy.response.result.MinecraftProfilePropertiesResponseImpl;
-import net.wouto.proxy.response.result.ProfileSearchResultsResponseImpl;
-
 import java.net.Proxy;
 import java.util.HashSet;
 import java.util.List;
 import java.util.UUID;
+import net.wouto.proxy.request.JoinMinecraftServerRequestImpl;
+import net.wouto.proxy.response.result.HasJoinedMinecraftServerResponseImpl;
+import net.wouto.proxy.response.result.JoinMinecraftServerResponseImpl;
+import net.wouto.proxy.response.result.MinecraftProfilePropertiesResponseImpl;
+import net.wouto.proxy.response.result.ProfileSearchResultsResponseImpl;
 
 public class MojangAPI {
 
@@ -54,6 +55,14 @@ public class MojangAPI {
             return null;
         }
         return new HasJoinedMinecraftServerResponseImpl(profile.getId(), profile.getName(), profile.getProperties());
+    }
+
+    public JoinMinecraftServerResponseImpl join(JoinMinecraftServerRequestImpl request) throws AuthenticationException {
+        if (request == null) {
+            return null;
+        }
+        this.sessionService.joinServer(request.getSelectedProfile(), request.getAccessToken(), request.getServerId());
+        return new JoinMinecraftServerResponseImpl();
     }
 
     public MinecraftProfilePropertiesResponseImpl fillGameProfile(String uuid, boolean unsigned) {

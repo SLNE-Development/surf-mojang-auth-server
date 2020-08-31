@@ -17,6 +17,7 @@ public class ErrorHandler extends ResponseEntityExceptionHandler {
     @ResponseBody
     @ResponseStatus(code = HttpStatus.INTERNAL_SERVER_ERROR)
     public ErrorResponse onError(Exception e) {
+        e.printStackTrace();
         return new ErrorResponse(e.toString() + ":" + e.getMessage(), Arrays.toString(e.getStackTrace())) {};
     }
 }
