@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mojang-proxy
+spec:
+  selector:
+    matchLabels:
+      app: mojang-proxy
+  template:
+    metadata:
+      labels:
+        app: mojang-proxy
+    spec:
+      containers:
+      - name: mojang-proxy
+        image: registry.slne.dev/silence/mojang-proxy-server:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8000
+        resources:
+          requests:
+            memory: "256Mi"

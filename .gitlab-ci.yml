@@ -18,7 +18,7 @@ build:
   services:
     - docker:19.03.11-dind
   script:
-    - apk update && apk add maven
+    - apk update && apk --no-cache add openjdk11 --repository=http://dl-cdn.alpinelinux.org/alpine/edge/community && apk add maven --no-cache
     - docker login -u "${CI_REGISTRY_USER}" -p "${CI_REGISTRY_PASSWORD}" "${CI_REGISTRY}"
     - mvn $MAVEN_CLI_OPTS -s $MAVEN_SETTINGS spring-boot:build-image -Dspring-boot.build-image.imageName="${CI_REGISTRY_IMAGE}:latest"
     - '[[ "${CI_COMMIT_REF_NAME}" == "master" ]] && docker push "${CI_REGISTRY_IMAGE}:latest"'
