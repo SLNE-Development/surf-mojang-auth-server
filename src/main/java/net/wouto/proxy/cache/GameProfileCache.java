@@ -125,7 +125,7 @@ public class GameProfileCache {
     public GameProfile hasJoined(String username, String serverId, InetAddress address) throws Exception {
         HasJoinedMinecraftServerResponseImpl response = null;
 
-        GameProfile joinedProfile = this.hasJoinedCache.getIfPresent(username);
+        GameProfile joinedProfile = this.hasJoinedCache.getIfPresent(serverId);
         if (joinedProfile != null) {
             // return the cached profile, since the /join endpoint needs authentication
             return joinedProfile;
