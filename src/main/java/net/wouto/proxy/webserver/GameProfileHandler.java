@@ -27,14 +27,11 @@ public class GameProfileHandler {
             String namesCombined = "\"" + String.join("\", \"", names) + "\"";
             System.out.println("forwarding findProfilesByNames(names:[" + namesCombined + "])");
         }
-        ProfileSearchResultsResponseImpl response = this.cache.findProfilesByNames(names);
-        if (response.getProfiles() == null) {
-            return new BasicGameProfile[0];
-        }
+        GameProfile[] response = this.cache.findProfilesByNames(names);
         List<BasicGameProfile> profiles = new ArrayList<>();
-        for (GameProfile gameProfile : response.getProfiles()) {
+        for (GameProfile gameProfile : response) {
             if (gameProfile != null) {
-                profiles.add(new BasicGameProfile(gameProfile.getId().toString().replace("-", ""), gameProfile.getName()));
+                profiles.add(new BasicGameProfile(gameProfile.getId(), gameProfile.getName()));
             }
         }
         return profiles.toArray(new BasicGameProfile[profiles.size()]);

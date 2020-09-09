@@ -5,6 +5,7 @@ import com.google.common.collect.Sets;
 import com.mojang.authlib.Agent;
 import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.HttpAuthenticationService;
+import com.mojang.authlib.ProfileLookupCallback;
 import com.mojang.authlib.exceptions.AuthenticationException;
 import com.mojang.authlib.exceptions.AuthenticationUnavailableException;
 import com.mojang.authlib.yggdrasil.YggdrasilEnvironment;
@@ -65,36 +66,19 @@ public class MojangAPI {
         return new JoinMinecraftServerResponseImpl();
     }
 
-    public MinecraftProfilePropertiesResponseImpl fillGameProfile(String uuid, boolean unsigned) {
-        if (uuid == null) {
+    public GameProfile fillGameProfile(GameProfile profile, boolean unsigned) {
+        if (profile == null) {
             return null;
         }
-        GameProfile p = this.sessionService.fillGameProfile(new GameProfile(UUIDTypeAdapter.fromString(uuid), null), unsigned);
-        return new MinecraftProfilePropertiesResponseImpl(p.getId(), p.getName(), p.getProperties());
+        GameProfile p = this.sessionService.fillGameProfile(new GameProfile(profile.getId(), null), unsigned);
+        return p;
     }
 
-    public ProfileSearchResultsResponseImpl findProfilesByNames(List<String> names) {
+    public void findProfilesByNames(List<String> names, ProfileLookupCallback callback) {
         if (names == null) {
-            return null;
+            return;
         }
-        if (names.size() > 100) {
-            names = names.subList(0, 100);
-        }
-        Agent game = Agent.MINECRAFT;
-        HashSet<String> nameSet = Sets.newHashSet();
-        nameSet.addAll(names);
-
-        for (Object o : Iterables.partition(nameSet, 100)) {
-            List nameSetPart = (List) o;
-            try {
-                ProfileSearchResultsResponse result = this.authenticationService.makeRequest(HttpAuthenticationService.constantURL("https://api.mojang.com/profiles/" + game.getName().toLowerCase()), nameSetPart, ProfileSearchResultsResponse.class);
-                return new ProfileSearchResultsResponseImpl(result.getProfiles());
-            } catch (AuthenticationException e) {
-                e.printStackTrace();
-            }
-
-        }
-        return null;
+        this.gameProfileRepository.findProfilesByNames(names.toArray(new String[0]), Agent.MINECRAFT, callback);
     }
 
 }

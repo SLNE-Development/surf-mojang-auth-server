@@ -1,0 +1,51 @@
+cache:
+  paths:
+    - .m2/repository/
+
+stages:
+  - test
+  - build
+  - release
+  - deploy
+
+variables:
+  MAVEN_CLI_OPTS: "--batch-mode"
+  MAVEN_OPTS: "-Dmaven.repo.local=.m2/repository"
+
+build:
+  stage: build
+  image: docker:19.03.11
+  services:
+    - docker:19.03.11-dind
+  script:
+    - apk update && apk add maven
+    - docker login -u "${CI_REGISTRY_USER}" -p "${CI_REGISTRY_PASSWORD}" "${CI_REGISTRY}"
+    - mvn $MAVEN_CLI_OPTS -s $MAVEN_SETTINGS spring-boot:build-image -Dspring-boot.build-image.imageName="${CI_REGISTRY_IMAGE}:latest"
+    - '[[ "${CI_COMMIT_REF_NAME}" == "master" ]] && docker push "${CI_REGISTRY_IMAGE}:latest"'
+    - docker tag "${CI_REGISTRY_IMAGE}:latest" "${CI_REGISTRY_IMAGE}:${CI_COMMIT_REF_NAME}"
+    - docker push "${CI_REGISTRY_IMAGE}:${CI_COMMIT_REF_NAME}"
+
+
+deploy_live:
+  image:
+    name: traherom/kustomize-docker
+    entrypoint: ["/bin/sh", "-c"]
+  stage: deploy
+  only:
+    - master
+  environment:
+    name: live
+    kubernetes:
+      namespace: slne-mc
+  script:
+    - kubectl version
+    - cd kubernetes
+    - kustomize edit add annotation "app.gitlab.com/env:$(echo $CI_ENVIRONMENT_SLUG)"
+    - kustomize edit add annotation "app.gitlab.com/app:$(echo $CI_PROJECT_PATH_SLUG)"
+    - kustomize edit add annotation "jobid:$(echo $CI_JOB_ID)"
+    - kustomize edit set image "${CI_REGISTRY_IMAGE}:${CI_COMMIT_REF_NAME}"
+    - kustomize edit add label "ref:$(echo $CI_ENVIRONMENT_SLUG)"
+    - kustomize build | kubectl apply -f -
+    - kubectl rollout status "deployment/$(echo ${CI_PROJECT_NAME} | tr "." "-" | tr '[:upper:]' '[:lower:]')"
+    - kubectl get deploy,svc,ing,pod -l app="$(echo ${CI_PROJECT_NAME} | tr "." "-" | tr '[:upper:]' '[:lower:]')"
+

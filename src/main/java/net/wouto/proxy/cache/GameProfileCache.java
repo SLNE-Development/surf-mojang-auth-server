@@ -3,29 +3,24 @@ package net.wouto.proxy.cache;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.mojang.authlib.GameProfile;
-import com.mojang.authlib.properties.Property;
+import com.mojang.authlib.ProfileLookupCallback;
 import java.net.InetAddress;
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 import net.wouto.proxy.Config;
-import net.wouto.proxy.Util;
 import net.wouto.proxy.request.JoinMinecraftServerRequestImpl;
 import net.wouto.proxy.response.result.HasJoinedMinecraftServerResponseImpl;
 import net.wouto.proxy.response.result.JoinMinecraftServerResponseImpl;
-import net.wouto.proxy.response.result.MinecraftProfilePropertiesResponseImpl;
-import net.wouto.proxy.response.result.ProfileSearchResultsResponseImpl;
 import net.wouto.proxy.service.MojangAPI;
 
 public class GameProfileCache {
 
     private Cache<String, GameProfile> nameProfileCache;
     private Cache<UUID, GameProfile> uuidProfileCache;
-
-    private Callable<GameProfile> getNullProfile = () -> null;
+    private Cache<String, GameProfile> hasJoinedCache;
 
     public GameProfileCache(Config config) {
         this.nameProfileCache = CacheBuilder.newBuilder()
@@ -37,84 +32,117 @@ public class GameProfileCache {
                 .maximumSize(Long.parseLong(config.getProperty("cacheCount", "10000")))
                 .expireAfterWrite(Long.parseLong(config.getProperty("cacheDuration", "3600")), TimeUnit.SECONDS)
                 .build();
+        this.hasJoinedCache = CacheBuilder.newBuilder()
+                .expireAfterWrite(10, TimeUnit.SECONDS)
+                .build();
     }
 
-    public MinecraftProfilePropertiesResponseImpl fillGameProfile(String uuid, boolean unsigned) {
-        MinecraftProfilePropertiesResponseImpl response = null;
-        try {
-            UUID uuidObj = Util.deserialize(uuid);
-            if (uuidObj != null) {
-                response = new MinecraftProfilePropertiesResponseImpl(this.uuidProfileCache.get(uuidObj, getNullProfile));
-            }
-        } catch (Exception ignored) {
+    /**
+     * Checks in the cache for the given GameProfile and fills it
+     *
+     * @param profile  the unfilled gameProfile
+     * @param unsigned if unsigned
+     * @return a new GameProfile or null
+     */
+    public GameProfile fillGameProfile(GameProfile profile, boolean unsigned) {
+        if (profile == null) {
+            return null;
         }
-        if (response == null) {
-            response = MojangAPI.getInstance().fillGameProfile(uuid, true);
-            GameProfile cacheEntry = response.getGameProfile();
-            this.nameProfileCache.put(cacheEntry.getName(), cacheEntry);
-            this.uuidProfileCache.put(cacheEntry.getId(), cacheEntry);
+        // local cache
+        GameProfile fillGameProfile = this.uuidProfileCache.getIfPresent(profile.getId());
+        if (fillGameProfile != null) {
+            return fillGameProfile;
         }
-        return response;
+
+        // call mojang api
+        fillGameProfile = MojangAPI.getInstance().fillGameProfile(profile, true);
+        if (fillGameProfile == null || fillGameProfile.getName() == null) {
+            return null;
+        }
+        this.nameProfileCache.put(fillGameProfile.getName(), fillGameProfile);
+        this.uuidProfileCache.put(fillGameProfile.getId(), fillGameProfile);
+        return fillGameProfile;
     }
 
-    public ProfileSearchResultsResponseImpl findProfilesByNames(List<String> names) {
-        ProfileSearchResultsResponseImpl response = new ProfileSearchResultsResponseImpl();
+    /**
+     * Finds the profiles for the given names
+     *
+     * @param namesInput the names
+     * @return an array containing the profiles
+     */
+    public GameProfile[] findProfilesByNames(Collection<String> namesInput) {
+        List<String> names = new ArrayList<>(namesInput);
         List<GameProfile> profiles = new ArrayList<>();
         names.removeIf(s -> {
-            try {
-                GameProfile profile = this.nameProfileCache.get(s, this.getNullProfile);
-                if (profile != null) {
-                    profiles.add(profile);
-                    return true;
-                }
-            } catch (Exception ignored) {
+            GameProfile profile = this.nameProfileCache.getIfPresent(s);
+            if (profile != null) {
+                profiles.add(profile);
+                return true;
             }
             return false;
         });
         if (!names.isEmpty()) {
-            ProfileSearchResultsResponseImpl res = MojangAPI.getInstance().findProfilesByNames(names);
-            Collections.addAll(profiles, res.getProfiles());
-        }
-        response.setProfiles(profiles.toArray(new GameProfile[profiles.size()]));
-        // <DEBUG>
-        System.out.println("GameProfileCache's interpretation");
-        int length = (response.getProfiles() != null ? response.getProfiles().length : 0);
-        System.out.println("Profile count: " + length);
-        if (response.getProfiles() != null) {
-            for (GameProfile gameProfile : response.getProfiles()) {
-                for (Property property : gameProfile.getProperties().values()) {
-                    System.out.println("\t" + property.getName() + " = " + property.getValue() + (!property.hasSignature() ? "" : " (signed: " + property.getSignature() + ")"));
+            MojangAPI.getInstance().findProfilesByNames(names, new ProfileLookupCallback() {
+                @Override
+                public void onProfileLookupSucceeded(GameProfile profile) {
+                    profiles.add(profile);
                 }
-            }
+
+                @Override
+                public void onProfileLookupFailed(GameProfile profile, Exception exception) {
+                    // ignore
+                }
+            });
         }
-        // </DEBUG>
-        return response;
+        return profiles.toArray(new GameProfile[0]);
     }
 
-    public JoinMinecraftServerResponseImpl join(JoinMinecraftServerRequestImpl request) throws Exception {
-        return MojangAPI.getInstance().join(request);
+    /**
+     * Adds the selected profile to a short cache
+     *
+     * @param request the request
+     * @return true if successful
+     * @throws Exception
+     */
+    public boolean join(JoinMinecraftServerRequestImpl request) throws Exception {
+        GameProfile profile = this.fillGameProfile(request.getSelectedProfile(), true);
+        if (profile == null) {
+            return false;
+        }
+        hasJoinedCache.put(request.getServerId(), profile);
+        return true;
     }
 
-    public HasJoinedMinecraftServerResponseImpl hasJoined(String username, String serverId, InetAddress address) throws Exception {
+    /**
+     * Checks if player has joined
+     *
+     * @param username the username to check against
+     * @param serverId the serverId
+     * @param address the source ip address
+     * @return the gameProfile, if the player hasJoined, null if not
+     * @throws Exception
+     */
+    public GameProfile hasJoined(String username, String serverId, InetAddress address) throws Exception {
         HasJoinedMinecraftServerResponseImpl response = null;
+
+        GameProfile joinedProfile = this.hasJoinedCache.getIfPresent(username);
+        if (joinedProfile != null) {
+            // return the cached profile, since the /join endpoint needs authentication
+            return joinedProfile;
+        }
+
         try {
+            // make mojang api call
             response = MojangAPI.getInstance().hasJoined(username, serverId, address);
             GameProfile gameProfile = new GameProfile(response.getId(), response.getName());
             gameProfile.getProperties().putAll(response.getPropertyMap());
             this.nameProfileCache.put(gameProfile.getName(), gameProfile);
             this.uuidProfileCache.put(gameProfile.getId(), gameProfile);
+            return gameProfile;
         } catch (Exception e) {
-            GameProfile profile = null;
-            try {
-                profile = this.nameProfileCache.get(username, getNullProfile);
-            } catch (Exception ignored) {
-
-            }
-            if (profile != null) {
-                response = new HasJoinedMinecraftServerResponseImpl(profile.getId(), profile.getName(), profile.getProperties());
-            }
+            // ignored
         }
-        return response;
+        return null;
     }
 
 }

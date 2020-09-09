@@ -1,6 +1,8 @@
 package net.wouto.proxy.webserver;
 
+import com.mojang.authlib.GameProfile;
 import net.wouto.proxy.MojangProxyServer;
+import net.wouto.proxy.Util;
 import net.wouto.proxy.cache.GameProfileCache;
 import net.wouto.proxy.request.JoinMinecraftServerRequestImpl;
 import net.wouto.proxy.response.result.HasJoinedMinecraftServerResponseImpl;
@@ -33,7 +35,9 @@ public class SessionRestHandler {
         if (MojangProxyServer.LOG_KNOWN_REQUESTS) {
             System.out.println("forwarding hasJoined(username:\"" + username + "\", serverId:\"" + serverId + "\")");
         }
-        return this.cache.hasJoined(username, serverId, null);
+        return new HasJoinedMinecraftServerResponseImpl(
+                this.cache.hasJoined(username, serverId, null)
+        );
     }
 
 
@@ -44,7 +48,10 @@ public class SessionRestHandler {
             System.out.println("forwarding join(" + request + ")");
         }
 
-        return this.cache.join(request);
+        if(this.cache.join(request)) {
+            return new JoinMinecraftServerResponseImpl();
+        }
+        return null;
     }
 
     @RequestMapping(value = "/session/minecraft/profile/{uuid}", method = RequestMethod.GET)
@@ -57,7 +64,9 @@ public class SessionRestHandler {
         if (MojangProxyServer.LOG_KNOWN_REQUESTS) {
             System.out.println("forwarding fillGameProfile(uuid:\"" + uuid + "\", unsigned:" + unsigned + ")");
         }
-        return this.cache.fillGameProfile(uuid, unsigned);
+        return new MinecraftProfilePropertiesResponseImpl(
+                this.cache.fillGameProfile(new GameProfile(Util.deserialize(uuid), null), unsigned)
+        );
     }
 
 }
