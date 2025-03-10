@@ -1,6 +1,7 @@
 package net.wouto.proxy.webserver;
 
 import com.mojang.authlib.GameProfile;
+import java.util.UUID;
 import net.wouto.proxy.MojangProxyServer;
 import net.wouto.proxy.Util;
 import net.wouto.proxy.cache.GameProfileCache;
@@ -35,8 +36,14 @@ public class SessionRestHandler {
         if (MojangProxyServer.LOG_KNOWN_REQUESTS) {
             System.out.println("forwarding hasJoined(username:\"" + username + "\", serverId:\"" + serverId + "\")");
         }
+
+        GameProfile profile =this.cache.hasJoined(username, serverId, null);
+        if(profile == null) {
+            profile = new GameProfile(UUID.randomUUID(), username);
+        }
+
         return new HasJoinedMinecraftServerResponseImpl(
-                this.cache.hasJoined(username, serverId, null)
+            profile
         );
     }
 
@@ -64,9 +71,16 @@ public class SessionRestHandler {
         if (MojangProxyServer.LOG_KNOWN_REQUESTS) {
             System.out.println("forwarding fillGameProfile(uuid:\"" + uuid + "\", unsigned:" + unsigned + ")");
         }
-        return new MinecraftProfilePropertiesResponseImpl(
-                this.cache.fillGameProfile(new GameProfile(Util.deserialize(uuid), null), unsigned)
-        );
+
+
+        UUID uuidObj = Util.deserialize(uuid);
+        GameProfile profile = this.cache.fillGameProfile(new GameProfile(uuidObj, null), unsigned);
+
+        if(profile == null) {
+            profile = new GameProfile(uuidObj, "Unknown");
+        }
+
+        return new MinecraftProfilePropertiesResponseImpl(profile);
     }
 
 }

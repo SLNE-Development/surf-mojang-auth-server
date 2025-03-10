@@ -47,7 +47,14 @@ public class AuthRestHandler {
         // fetch the profile for the given username
         String userName = userDetails.getUsername();
         GameProfile[] profiles = gameProfileCache.findProfilesByNames(Collections.singleton(userName));
-        GameProfile profile = profiles[0];
+        GameProfile profile;
+
+        if(profiles.length == 0) {
+            profile = new GameProfile(UUID.randomUUID(), userName);
+        } else {
+            profile = profiles[0];
+        }
+
         return ResponseEntity.ok(new AuthenticateResponseImpl(token, new BasicGameProfile(profile.getId(), profile.getName()), null, authenticationRequest.getClientToken()));
     }
 

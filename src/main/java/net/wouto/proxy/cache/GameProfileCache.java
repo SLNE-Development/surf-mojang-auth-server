@@ -140,7 +140,7 @@ public class GameProfileCache {
             this.uuidProfileCache.put(gameProfile.getId(), gameProfile);
             return gameProfile;
         } catch (Exception e) {
-            // ignored
+            // ignore
         }
         return null;
     }

@@ -36,8 +36,8 @@ public class MojangAPI {
     private MojangAPI() {
         this.clientToken = UUID.randomUUID().toString();
         this.authenticationService = new YggdrasilAuthenticationServiceProxy(Proxy.NO_PROXY, clientToken);
-        this.sessionService = new YggdrasilMinecraftSessionServiceProxy(this.authenticationService, YggdrasilEnvironment.PROD);
-        this.gameProfileRepository = new YggdrasilGameProfileRepository(this.authenticationService, YggdrasilEnvironment.PROD);
+        this.sessionService = new YggdrasilMinecraftSessionServiceProxy(this.authenticationService, YggdrasilEnvironment.PROD.getEnvironment());
+        this.gameProfileRepository = new YggdrasilGameProfileRepository(this.authenticationService, YggdrasilEnvironment.PROD.getEnvironment());
     }
 
     public static MojangAPI getInstance() {
@@ -67,7 +67,7 @@ public class MojangAPI {
     }
 
     public GameProfile fillGameProfile(GameProfile profile, boolean unsigned) {
-        if (profile == null) {
+        if (profile == null || profile.getId() == null) {
             return null;
         }
         GameProfile p = this.sessionService.fillGameProfile(new GameProfile(profile.getId(), null), unsigned);
@@ -78,7 +78,12 @@ public class MojangAPI {
         if (names == null) {
             return;
         }
-        this.gameProfileRepository.findProfilesByNames(names.toArray(new String[0]), Agent.MINECRAFT, callback);
+
+        try {
+            this.gameProfileRepository.findProfilesByNames(names.toArray(new String[0]), Agent.MINECRAFT, callback);
+        } catch (NullPointerException ex) {
+            // ignore
+        }
     }
 
 }

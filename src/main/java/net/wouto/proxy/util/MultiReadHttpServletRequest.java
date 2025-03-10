@@ -9,7 +9,6 @@ import javax.servlet.ReadListener;
 import javax.servlet.ServletInputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletRequestWrapper;
-import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -60,7 +59,7 @@ public class MultiReadHttpServletRequest extends HttpServletRequestWrapper {
          * convenience, I use apache.commons IOUtils
          */
         cachedBytes = new ByteArrayOutputStream();
-        IOUtils.copy(super.getInputStream(), cachedBytes);
+        org.apache.tomcat.util.http.fileupload.IOUtils.copy(super.getInputStream(), cachedBytes);
     }
 
     /* An inputstream which reads the cached request body */

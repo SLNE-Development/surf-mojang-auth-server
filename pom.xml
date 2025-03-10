@@ -19,7 +19,7 @@
         <dependency>
             <groupId>com.mojang</groupId>
             <artifactId>authlib</artifactId>
-            <version>1.6.25</version>
+            <version>3.18.38</version>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
